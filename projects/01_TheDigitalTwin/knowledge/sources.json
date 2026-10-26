@@ -1,0 +1,14 @@
+{
+  "medium_feed_url": "https://medium.com/feed/@mahantai",
+  "github_username": "dhaval-mistry",
+  "youtube_channel_id": "UC5AVopbspv_F_XF3FwJLAIg",
+  "max_medium_articles": 20,
+  "max_github_repos": 12,
+  "max_youtube_videos": 20,
+  "profile_links": {
+    "linkedin": "https://www.linkedin.com/in/dhavalmmistry/",
+    "github": "https://github.com/dhaval-mistry",
+    "medium": "https://medium.com/@mahantai",
+    "youtube": "https://www.youtube.com/@mahantaijournal"
+  }
+}

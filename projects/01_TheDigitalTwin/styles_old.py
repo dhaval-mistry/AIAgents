@@ -356,6 +356,7 @@ JS = """
 () => {
   document.title = 'Digital Twin';
 
+  // Focus the most recently rendered Gradio message textarea.
   const focusInput = () => {
     const areas = document.querySelectorAll('textarea');
     if (areas.length) areas[areas.length - 1].focus();
@@ -375,6 +376,7 @@ JS = """
     }).observe(area, { attributes: true, attributeFilter: ['disabled', 'readonly'] });
   };
 
+  // Attach focus behavior to both current and newly rendered textareas.
   const scan = () => document.querySelectorAll('textarea').forEach(watchTextarea);
   setTimeout(scan, 500);
   new MutationObserver(scan).observe(document.body, { childList: true, subtree: true });

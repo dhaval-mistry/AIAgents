@@ -1,0 +1,4 @@
+# Only reviewed outputs should be committed to the PUBLIC repository.
+# Keep private working copies elsewhere; no credentials in this folder.
+*.log
+*.tmp

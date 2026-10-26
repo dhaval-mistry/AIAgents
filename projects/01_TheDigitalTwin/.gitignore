@@ -39,3 +39,13 @@ dist/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Append these rules to your existing project .gitignore.
+.env
+.env.*
+!.env.example
+.cache/
+__pycache__/
+*.py[cod]
+knowledge/source_preview.json
+# Reviewed runtime index files must NOT be ignored.

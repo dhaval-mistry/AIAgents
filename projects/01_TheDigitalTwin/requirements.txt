@@ -3,3 +3,7 @@ gradio
 pypdf
 openai
 python-dotenv
+numpy
+boto3>=1.40,<2
+python-docx>=1.1,<2
+
