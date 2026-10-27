@@ -13,6 +13,8 @@ pushover_token = os.getenv("PUSHOVER_TOKEN")
 # Define the Pushover API endpoint
 pushover_url = "https://api.pushover.net/1/messages.json"
 
+# Send an owner notification through Pushover; model-facing functions below
+# reuse this transport so notification details stay in one place.
 # Define a function to send a message to Pushover
 def push(text):
     requests.post(
@@ -24,11 +26,13 @@ def push(text):
         },
     )
 
+# Convert a visitor's voluntary contact request into an owner notification.
 #  Define the tools that can be called by the agent
 def record_user_details(email, name="Name not provided", notes="not provided"):
     push(f"Recording interest from {name} with email {email} and notes {notes}")
     return "OK"
 
+# Notify the owner about a knowledge gap instead of allowing the twin to guess.
 # Define the tools that can be called by the agent
 def record_unknown_question(question):
     push(f"Recording {question} asked that I couldn't answer")
@@ -68,18 +72,26 @@ record_unknown_question_json = {
 }
 
 # Define the tools that can be called by the agent
+# Publish only these JSON schemas to the model; Python functions themselves are
+# never passed to the provider.
 tools = [
     {"type": "function", "function": record_user_details_json},
     {"type": "function", "function": record_unknown_question_json},
 ]
 
 # Define a mapping of tool names to their corresponding functions
+# Explicit dispatch prevents an arbitrary model-supplied function name from
+# resolving through Python globals.
 tool_map = {
     "record_user_details": record_user_details,
     "record_unknown_question": record_unknown_question,
 }
 
 
+# Execute a batch of model tool requests and return Chat Completions-compatible
+# tool messages that let the model finish its response.
+# The legacy comment below mentions globals, but this implementation deliberately
+# dispatches through the explicit tool_map allowlist above.
 # This function can take a list of tool calls, and run them. This is the globals() version!!
 def handle_tool_calls(tool_calls):
     results = []

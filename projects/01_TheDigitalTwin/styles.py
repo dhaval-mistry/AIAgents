@@ -447,6 +447,7 @@ JS = """
   new MutationObserver(forceLight).observe(document.body, { attributes: true, attributeFilter: ["class"] });
   new MutationObserver(forceLight).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
 
+  // Small DOM helpers keep the UI-enhancement code readable and centralized.
   const $ = (s, r = document) => r.querySelector(s);
   const make = (tag, cls, html) => {
     const e = document.createElement(tag);
@@ -454,6 +455,7 @@ JS = """
     if (html !== undefined) e.innerHTML = html;
     return e;
   };
+  // Gradio may rebuild the textarea, so always resolve the current instance.
   const getInput = () => {
     const a = document.querySelectorAll("textarea");
     return a.length ? a[a.length - 1] : null;
@@ -474,6 +476,7 @@ JS = """
     }, 80);
   };
 
+  // Prefer Gradio's clear action and fall back to a reload when it is absent.
   const newChat = () => {
     const clear = $('button[aria-label="Clear"]') || $('button[title="Clear"]');
     if (clear) clear.click(); else { location.reload(); return; }
@@ -481,6 +484,7 @@ JS = """
     if (a) a.focus();
   };
 
+  // Apply consistent placeholder and accessibility text to a rebuilt input.
   const tune = (area) => {
     if (area.placeholder !== PLACEHOLDER) area.placeholder = PLACEHOLDER;
     area.title = PLACEHOLDER;
@@ -501,6 +505,7 @@ JS = """
     }).observe(area, { attributes: true, attributeFilter: ["disabled", "readonly", "placeholder"] });
   };
 
+  // Add the branded UI around Gradio's generated DOM exactly once.
   const ensure = () => {
     // Header: brand bar + headline
     const h1 = $(".gradio-container h1");
@@ -530,6 +535,8 @@ JS = """
     let common = bot;
     while (common && !common.contains(area)) common = common.parentNode;
     if (!common || common === document.body) return;
+    // Find the direct child under the shared container so inserted panels align
+    // with Gradio's current layout without depending on a fixed nesting depth.
     const childOf = (n) => { while (n && n.parentNode !== common) n = n.parentNode; return n; };
     const host = childOf(bot);
     const inputBlock = childOf(area);
@@ -576,12 +583,14 @@ JS = """
   };
 
   let queued = false;
+  // Reconcile enhancements after Gradio renders or replaces interface nodes.
   const scan = () => {
     queued = false;
     ensure();
     addAvatars();
     document.querySelectorAll("textarea").forEach(watchTextarea);
   };
+  // Collapse many DOM mutations into one browser animation-frame update.
   const schedule = () => { if (!queued) { queued = true; requestAnimationFrame(scan); } };
 
   setTimeout(() => { scan(); const a = getInput(); if (a) a.focus(); }, 400);
