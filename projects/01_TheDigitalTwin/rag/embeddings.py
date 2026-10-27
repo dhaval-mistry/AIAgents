@@ -3,6 +3,8 @@ from dataclasses import dataclass
 import json
 import os
 import numpy as np
+import logging
+import re
 
 # Present embedding failures through a domain-specific exception so callers do
 # not need to understand boto3 or NumPy implementation details.
@@ -45,6 +47,33 @@ def normalized_vector(value, dimensions):
     if norm <= 0:
         raise EmbeddingError('Embedding contains no usable values.')
     return vector / norm
+
+
+
+def _safe_denial_reason(message, input_text):
+    """Keep AWS's explanation useful without exposing sensitive values."""
+    reason = str(message)
+
+    # Mask the submitted question and credential values from the environment.
+    # Redact before truncating so partial credentials cannot appear in logs.
+    sensitive_values = [input_text] + [
+        value
+        for name, value in os.environ.items()
+        if value
+        and any(
+            marker in name.upper()
+            for marker in ("KEY", "TOKEN", "SECRET", "PASSWORD", "CREDENTIAL")
+        )
+    ]
+
+    # Replace longer values first in case one secret contains another.
+    for value in sorted(set(sensitive_values), key=len, reverse=True):
+        if value:
+            reason = reason.replace(value, "[REDACTED]")
+
+    # Hide 12-digit AWS account IDs and keep each entry on one bounded line.
+    reason = re.sub(r"\b\d{12}\b", "[ACCOUNT]", reason)
+    return " ".join(reason.split())[:1600]
 
 
 # Lazily call Titan Text Embeddings V2 through Bedrock Runtime.
@@ -95,11 +124,31 @@ class BedrockEmbedder:
         except EmbeddingError:
             raise
         except Exception as error:
-            # Report only the provider's error CODE, never requests, prompts,
-            # response bodies, access keys, or exception messages.
-            response = getattr(error, 'response', {})
-            code = response.get('Error', {}).get('Code', type(error).__name__)
+            response = getattr(error, "response", {})
+            details = response.get("Error", {})
+            code = details.get("Code", type(error).__name__)
+
+            if code == "AccessDeniedException":
+                # Log AWS's authorization explanation to stderr immediately.
+                # Log only whether a bearer token exists, never its value.
+                # The request ID helps AWS Support investigate the failed call.
+                logging.getLogger(__name__).warning(
+                    "[bedrock embedding diagnostic] "
+                    "region=%s model=%s bearer_configured=%s "
+                    "request_id=%s reason=%s",
+                    self.config.region,
+                    self.config.model_id,
+                    bool(os.getenv("AWS_BEARER_TOKEN_BEDROCK")),
+                    response.get("ResponseMetadata", {}).get(
+                        "RequestId", "unavailable"
+                    ),
+                    _safe_denial_reason(details.get("Message", ""), text),
+                )
+
+            # Preserve the existing exception and generic visitor-facing message.
+            # Do not expose the raw exception, request, or credentials.
             raise EmbeddingError(
-                f'Bedrock embedding request failed ({code}). Check region, credentials, '
-                'Titan model availability, and bedrock:InvokeModel permission.'
+                f"Bedrock embedding request failed ({code}). "
+                "Check region, credentials, Titan model availability, "
+                "and bedrock:InvokeModel permission."
             ) from None
