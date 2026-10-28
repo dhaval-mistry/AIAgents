@@ -49,10 +49,14 @@ html, body, gradio-app {
   width: 100% !important;
   max-width: min(1360px, 96vw) !important;
   margin: 0 auto !important;
-  padding: 28px 28px 40px !important;
+  padding: 0 !important;
 }
 .block, .form { box-shadow: none !important; }
 .dt-stack { gap: 0 !important; }
+.app, .gradio-container .app {
+  padding: 5px !important;
+}
+.block, .form { box-shadow: none !important; }
 
 /* ---------- Top bar ---------- */
 .dt-topbar {
@@ -419,7 +423,12 @@ textarea::placeholder, input::placeholder { color: #8a99ad !important; }
   .message-row .flex-wrap { max-width: 92% !important; }
 }
 @media (max-width: 560px) {
-  .gradio-container { padding: 18px 12px 28px !important; }
+  /*.gradio-container { padding: 18px 12px 28px !important; }*/
+  .gradio-container { padding: 0 !important; }
+  /* Hide the suggested questions on phones */
+  .dt-suggest { display: none !important; }
+  /* The "Conversation" bar becomes the top of the card, so give it the rounded corners */
+  .dt-conv { border-radius: var(--dt-radius) var(--dt-radius) 0 0 !important; border-top: 1px solid var(--dt-line) !important; }
   .dt-chips { grid-template-columns: 1fr; }
   .dt-conv-right { display: none; }
   .bubble-wrap, .chatbot .bubble-wrap { padding: 14px !important; }
